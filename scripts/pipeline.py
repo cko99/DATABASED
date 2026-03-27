@@ -1,12 +1,13 @@
 import requests
 import json
 import os
+import time
+import re
 import gspread
 from oauth2client.service_account import ServiceAccountCredentials
 
-# ===== ENV =====
+# ===== CONFIG =====
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
-LLM7_API_KEY = os.getenv("LLM7_API_KEY")
 
 SPREADSHEET_ID = "1xOMz2loJFBUel9ewTh1LUmPqSYgXw3JzDVgGAjD0R2Y"
 
@@ -20,42 +21,44 @@ creds = ServiceAccountCredentials.from_json_keyfile_name("credentials.json", sco
 client = gspread.authorize(creds)
 sheet = client.open_by_key(SPREADSHEET_ID).sheet1
 
+# ===== HELPERS =====
+
+def clean_text(text):
+    if not text:
+        return ""
+    return str(text).strip()
+
+def clean_email(email):
+    if not email:
+        return ""
+    if "@" in email:
+        return email.strip()
+    return ""
+
+def clean_phone(phone):
+    if not phone:
+        return ""
+    phone = re.sub(r"[^\d+]", "", phone)
+    return phone
+
+def safe_json_parse(text):
+    try:
+        if "```" in text:
+            text = text.split("```")[1]
+        return json.loads(text)
+    except:
+        return None
+
 # ===== GEMINI =====
-def get_raw_data():
+
+def get_company_data(retry=3):
     url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key={GEMINI_API_KEY}"
 
     prompt = """
-    Give 1 real construction company in Malaysia with:
-    - company_name
-    - city
-    - state
-    - website
-    - email
-    - phone
-    """
+    Give 1 REAL construction company in Malaysia.
 
-    payload = {
-        "contents": [{"parts": [{"text": prompt}]}]
-    }
-
-    res = requests.post(url, json=payload)
-
-    try:
-        data = res.json()
-        return data["candidates"][0]["content"]["parts"][0]["text"]
-    except:
-        print("❌ Gemini Error:", res.text)
-        return None
-
-# ===== LLM7 =====
-def clean_data(raw_text):
-    url = "https://api.llm7.io/v1/process"
-
-    prompt = f"""
-    Convert this text into STRICT JSON format only.
-
-    Format:
-    {{
+    Return ONLY valid JSON:
+    {
       "company_name": "",
       "industry": "construction",
       "state": "",
@@ -67,72 +70,107 @@ def clean_data(raw_text):
       "email": "",
       "phone": "",
       "description": ""
-    }}
-
-    TEXT:
-    {raw_text}
+    }
     """
 
-    headers = {
-        "Authorization": f"Bearer {LLM7_API_KEY}",
-        "Content-Type": "application/json"
+    payload = {
+        "contents": [{"parts": [{"text": prompt}]}]
     }
 
-    res = requests.post(url, headers=headers, json={"prompt": prompt})
+    for attempt in range(retry):
+        try:
+            res = requests.post(url, json=payload)
+            text = res.json()["candidates"][0]["content"]["parts"][0]["text"]
 
-    try:
-        text = res.text.strip()
+            data = safe_json_parse(text)
 
-        # 🔥 FIX: buang ```json kalau ada
-        if "```" in text:
-            text = text.split("```")[1]
+            if data:
+                return data
 
-        return json.loads(text)
+        except Exception as e:
+            print(f"❌ Attempt {attempt+1} failed:", e)
 
-    except Exception as e:
-        print("❌ LLM7 Error:", res.text)
-        return None
+        time.sleep(2)
+
+    return None
+
+# ===== VALIDATION =====
+
+def validate_data(data):
+    if not data:
+        return False
+
+    if not data.get("company_name"):
+        return False
+
+    return True
+
+# ===== CLEANING =====
+
+def clean_data(data):
+    return {
+        "company_name": clean_text(data.get("company_name")),
+        "industry": clean_text(data.get("industry")) or "construction",
+        "state": clean_text(data.get("state")),
+        "city": clean_text(data.get("city")),
+        "country": clean_text(data.get("country")) or "Malaysia",
+        "latitude": clean_text(data.get("latitude")),
+        "longitude": clean_text(data.get("longitude")),
+        "website": clean_text(data.get("website")),
+        "email": clean_email(data.get("email")),
+        "phone": clean_phone(data.get("phone")),
+        "description": clean_text(data.get("description")),
+    }
+
+# ===== DUPLICATE CHECK =====
+
+def is_duplicate(company_name):
+    records = sheet.col_values(1)  # column A
+    return company_name in records
 
 # ===== INSERT =====
+
 def insert_to_sheet(data):
     row = [
-        data.get("company_name"),
-        data.get("industry"),
-        data.get("state"),
-        data.get("city"),
-        data.get("country"),
-        data.get("latitude"),
-        data.get("longitude"),
-        data.get("website"),
-        data.get("email"),
-        data.get("phone"),
-        data.get("description")
+        data["company_name"],
+        data["industry"],
+        data["state"],
+        data["city"],
+        data["country"],
+        data["latitude"],
+        data["longitude"],
+        data["website"],
+        data["email"],
+        data["phone"],
+        data["description"]
     ]
 
-    print("📤 INSERT ROW:", row)
+    print("📤 INSERT:", row)
     sheet.append_row(row)
 
 # ===== MAIN =====
+
 def main():
-    print("🚀 TEST INSERT ONLY")
+    print("🚀 START PIPELINE")
 
-    test_data = {
-        "company_name": "TEST COMPANY",
-        "industry": "construction",
-        "state": "Selangor",
-        "city": "Shah Alam",
-        "country": "Malaysia",
-        "latitude": "",
-        "longitude": "",
-        "website": "test.com",
-        "email": "test@email.com",
-        "phone": "0123456789",
-        "description": "THIS IS TEST DATA"
-    }
+    raw = get_company_data()
+    print("📥 RAW:", raw)
 
-    insert_to_sheet(test_data)
+    if not validate_data(raw):
+        print("❌ INVALID DATA")
+        return
 
-    print("✅ TEST DONE")
+    data = clean_data(raw)
+    print("🧹 CLEANED:", data)
+
+    if is_duplicate(data["company_name"]):
+        print("⚠️ DUPLICATE - SKIP")
+        return
+
+    insert_to_sheet(data)
+
+    print("✅ DONE")
+
 
 if __name__ == "__main__":
     main()
