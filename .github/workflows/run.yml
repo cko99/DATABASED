@@ -1,28 +1,11 @@
-name: AI Data Pipeline
+- name: Install dependencies
+  run: pip install -r requirements.txt
 
-on:
-  schedule:
-    - cron: "0 */6 * * *"   # every 6 hours
-  workflow_dispatch:
+- name: Create credentials.json
+  run: echo '${{ secrets.GOOGLE_CREDENTIALS }}' > credentials.json
 
-jobs:
-  run-pipeline:
-    runs-on: ubuntu-latest
-
-    steps:
-    - name: Checkout repo
-      uses: actions/checkout@v3
-
-    - name: Setup Python
-      uses: actions/setup-python@v4
-      with:
-        python-version: "3.10"
-
-    - name: Install dependencies
-      run: pip install -r requirements.txt
-
-    - name: Run pipeline
-      env:
-        GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
-        LLM7_API_KEY: ${{ secrets.LLM7_API_KEY }}
-      run: python scripts/pipeline.py
+- name: Run pipeline
+  env:
+    GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+    LLM7_API_KEY: ${{ secrets.LLM7_API_KEY }}
+  run: python scripts/pipeline.py
