@@ -21,11 +21,9 @@ jobs:
     - name: Install dependencies
       run: pip install -r requirements.txt
 
-    # 🔥 CREATE credentials.json dari GitHub Secrets
     - name: Create credentials.json
       run: echo '${{ secrets.GOOGLE_CREDENTIALS }}' > credentials.json
 
-    # 🚀 RUN SCRIPT
     - name: Run pipeline
       env:
         GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
