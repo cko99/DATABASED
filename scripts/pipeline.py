@@ -119,16 +119,26 @@ def main():
     raw = get_raw_data()
     print("📥 RAW:", raw)
 
-    if not raw:
-        print("❌ STOP: No raw data")
-        return
-
     cleaned = clean_data(raw)
     print("🧹 CLEANED:", cleaned)
 
+    # 🔥 FORCE INSERT EVEN IF PARTIAL
     if not cleaned:
-        print("❌ STOP: Cleaning failed")
-        return
+        print("⚠️ CLEAN FAILED → INSERT RAW AS BACKUP")
+
+        cleaned = {
+            "company_name": raw,
+            "industry": "construction",
+            "state": "",
+            "city": "",
+            "country": "Malaysia",
+            "latitude": "",
+            "longitude": "",
+            "website": "",
+            "email": "",
+            "phone": "",
+            "description": "fallback raw data"
+        }
 
     insert_to_sheet(cleaned)
 
