@@ -7,7 +7,7 @@ import gspread
 from oauth2client.service_account import ServiceAccountCredentials
 
 # ===== CONFIG =====
-GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
+GEMINI_API_KEY = os.getenv("LLM7_API_KEY")
 
 SPREADSHEET_ID = "1xOMz2loJFBUel9ewTh1LUmPqSYgXw3JzDVgGAjD0R2Y"
 
