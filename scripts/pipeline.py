@@ -54,16 +54,26 @@ def safe_json_parse(text):
 def get_company_data():
     url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={GEMINI_API_KEY}"
 
-    prompt = """
-    Give 1 REAL construction company in Malaysia.
+    prompt ="""
+Give 100 REAL company in Malaysia related to:
 
-    Include:
-    - Company Name
-    - City
-    - Website (if any)
-    - Email (if any)
-    - Phone (if any)
-    """
+- Geospatial
+- GIS (Geographic Information System)
+- Land Survey
+- Mapping
+- Drone Survey
+- Remote Sensing
+
+Avoid duplicates.
+
+Include:
+- Company Name
+- City
+- State
+- Website (if available)
+- Email (if available)
+- Phone (if available)
+"""
 
     payload = {
         "contents": [{"parts": [{"text": prompt}]}]
