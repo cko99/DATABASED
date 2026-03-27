@@ -18,7 +18,7 @@ scope = [
 
 creds = ServiceAccountCredentials.from_json_keyfile_name("credentials.json", scope)
 client = gspread.authorize(creds)
-sheet = client.open(SHEET_NAME).sheet1
+sheet = client.open_by_key("1Yge8HlHEiQUTazaQ1yy0hYney22MFMYzlMBfjBoWHD8").sheet1
 
 # ===== GEMINI =====
 def get_raw_data():
