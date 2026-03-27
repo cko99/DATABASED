@@ -114,35 +114,25 @@ def insert_to_sheet(data):
 
 # ===== MAIN =====
 def main():
-    print("🚀 START PIPELINE")
+    print("🚀 TEST INSERT ONLY")
 
-    raw = get_raw_data()
-    print("📥 RAW:", raw)
+    test_data = {
+        "company_name": "TEST COMPANY",
+        "industry": "construction",
+        "state": "Selangor",
+        "city": "Shah Alam",
+        "country": "Malaysia",
+        "latitude": "",
+        "longitude": "",
+        "website": "test.com",
+        "email": "test@email.com",
+        "phone": "0123456789",
+        "description": "THIS IS TEST DATA"
+    }
 
-    cleaned = clean_data(raw)
-    print("🧹 CLEANED:", cleaned)
+    insert_to_sheet(test_data)
 
-    # 🔥 FORCE INSERT EVEN IF PARTIAL
-    if not cleaned:
-        print("⚠️ CLEAN FAILED → INSERT RAW AS BACKUP")
-
-        cleaned = {
-            "company_name": raw,
-            "industry": "construction",
-            "state": "",
-            "city": "",
-            "country": "Malaysia",
-            "latitude": "",
-            "longitude": "",
-            "website": "",
-            "email": "",
-            "phone": "",
-            "description": "fallback raw data"
-        }
-
-    insert_to_sheet(cleaned)
-
-    print("✅ DONE")
+    print("✅ TEST DONE")
 
 if __name__ == "__main__":
     main()
