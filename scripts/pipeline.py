@@ -151,26 +151,48 @@ def insert_to_sheet(data):
 # ===== MAIN =====
 
 def main():
-    print("🚀 START PIPELINE")
+    print("🚀 START BATCH PIPELINE")
 
-    raw = get_company_data()
-    print("📥 RAW:", raw)
+    success_count = 0
 
-    if not validate_data(raw):
-        print("❌ INVALID DATA")
-        return
+    for i in range(20):
+        print(f"\n🔄 PROCESS {i+1}/20")
 
-    data = clean_data(raw)
-    print("🧹 CLEANED:", data)
+        raw = get_company_data()
+        print("📥 RAW:", raw)
 
-    if is_duplicate(data["company_name"]):
-        print("⚠️ DUPLICATE - SKIP")
-        return
+        if not raw:
+            print("❌ No data, skip")
+            continue
 
-    insert_to_sheet(data)
+        data = clean_data(raw) if isinstance(raw, dict) else {
+            "company_name": raw[:50],
+            "industry": "construction",
+            "state": "",
+            "city": "",
+            "country": "Malaysia",
+            "latitude": "",
+            "longitude": "",
+            "website": "",
+            "email": "",
+            "phone": "",
+            "description": raw
+        }
 
-    print("✅ DONE")
+        if not data.get("company_name"):
+            print("❌ Invalid data, skip")
+            continue
 
+        if is_duplicate(data["company_name"]):
+            print("⚠️ Duplicate, skip")
+            continue
+
+        insert_to_sheet(data)
+        success_count += 1
+
+        time.sleep(2)  # avoid API rate limit
+
+    print(f"\n✅ DONE: {success_count} inserted")
 
 if __name__ == "__main__":
     main()
