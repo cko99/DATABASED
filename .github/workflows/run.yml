@@ -24,11 +24,12 @@ jobs:
     - name: Install dependencies
       run: pip install -r requirements.txt
 
+    # 🔥 FIX: guna printf (lebih stable dari echo)
     - name: Create credentials.json
-      run: echo '${{ secrets.GOOGLE_CREDENTIALS }}' > credentials.json
+      run: |
+        printf '%s' '${{ secrets.GOOGLE_CREDENTIALS }}' > credentials.json
 
     - name: Run pipeline
       env:
         GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
-        LLM7_API_KEY: ${{ secrets.LLM7_API_KEY }}
       run: python scripts/pipeline.py
