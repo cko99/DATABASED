@@ -51,48 +51,31 @@ def safe_json_parse(text):
 
 # ===== GEMINI =====
 
-def get_company_data(retry=3):
-    url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key={GEMINI_API_KEY}"
+def get_company_data():
+    url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={GEMINI_API_KEY}"
 
     prompt = """
     Give 1 REAL construction company in Malaysia.
 
-    Return ONLY valid JSON:
-    {
-      "company_name": "",
-      "industry": "construction",
-      "state": "",
-      "city": "",
-      "country": "Malaysia",
-      "latitude": "",
-      "longitude": "",
-      "website": "",
-      "email": "",
-      "phone": "",
-      "description": ""
-    }
+    Include:
+    - Company Name
+    - City
+    - Website (if any)
+    - Email (if any)
+    - Phone (if any)
     """
 
     payload = {
         "contents": [{"parts": [{"text": prompt}]}]
     }
 
-    for attempt in range(retry):
-        try:
-            res = requests.post(url, json=payload)
-            text = res.json()["candidates"][0]["content"]["parts"][0]["text"]
-
-            data = safe_json_parse(text)
-
-            if data:
-                return data
-
-        except Exception as e:
-            print(f"❌ Attempt {attempt+1} failed:", e)
-
-        time.sleep(2)
-
-    return None
+    try:
+        res = requests.post(url, json=payload)
+        text = res.json()["candidates"][0]["content"]["parts"][0]["text"]
+        return text.strip()
+    except:
+        print("❌ Gemini failed")
+        return None
 
 # ===== VALIDATION =====
 
