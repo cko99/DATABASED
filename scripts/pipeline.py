@@ -8,7 +8,7 @@ from oauth2client.service_account import ServiceAccountCredentials
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 LLM7_API_KEY = os.getenv("LLM7_API_KEY")
 
-SPREADSHEET_ID = "1Yge8HlHEiQUTazaQ1yy0hYney22MFMYzlMBfjBoWHD8"
+SPREADSHEET_ID = "1xOMz2loJFBUel9ewTh1LUmPqSYgXw3JzDVgGAjD0R2Y"
 
 # ===== GOOGLE SHEETS =====
 scope = [
